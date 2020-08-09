@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.observe
+import androidx.recyclerview.widget.DividerItemDecoration
 import com.derekyu.testapp.ui.AppsAdapter
 import com.derekyu.testapp.ui.AppsLoadStateAdapter
 import kotlinx.android.synthetic.main.main_fragment.*
@@ -37,6 +38,9 @@ class MainFragment : Fragment() {
 
     private fun initAdapter() {
         appsAdapter = AppsAdapter()
+        app_list.addItemDecoration(
+            DividerItemDecoration(context, DividerItemDecoration.VERTICAL)
+        )
         app_list.adapter = appsAdapter.withLoadStateFooter(
             footer = AppsLoadStateAdapter(appsAdapter)
         )
