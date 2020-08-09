@@ -1,11 +1,12 @@
 package com.derekyu.testapp
 
+import android.util.Log
 import androidx.lifecycle.*
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import com.derekyu.testapp.data.api.ApiHelper
 import com.derekyu.testapp.data.api.RetrofitBuilder
-import com.derekyu.testapp.data.model.AppInfoDTO
+import com.derekyu.testapp.data.model.*
 import com.derekyu.testapp.data.repository.inmemory.PageKeyedPagingSource
 import kotlinx.coroutines.launch
 

@@ -6,8 +6,7 @@ import android.view.LayoutInflater
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.derekyu.testapp.R
 import com.derekyu.testapp.data.model.AppInfoDTO
-import com.derekyu.testapp.ui.AppRecommendationAdapter
-import kotlinx.android.synthetic.main.view_app_suggest_list.view.*
+import kotlinx.android.synthetic.main.view_app_recommendation.view.*
 
 class AppRecommendationView @JvmOverloads constructor(
     context: Context,
@@ -16,7 +15,7 @@ class AppRecommendationView @JvmOverloads constructor(
 ) : ConstraintLayout(context, attrs, defStyle) {
     private val adapter: AppRecommendationAdapter
     init {
-        LayoutInflater.from(context).inflate(R.layout.view_app_suggest_list, this)
+        LayoutInflater.from(context).inflate(R.layout.view_app_recommendation, this)
 
         adapter = AppRecommendationAdapter()
         app_suggest_recycler_view.adapter = adapter

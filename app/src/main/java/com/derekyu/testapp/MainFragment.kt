@@ -1,6 +1,7 @@
 package com.derekyu.testapp
 
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -50,9 +51,9 @@ class MainFragment : Fragment() {
             viewModel.appPage.collectLatest {
                 appsAdapter.submitData(it)
             }
-            viewModel.appRecommendationList.observe(viewLifecycleOwner) {
-                app_recommendation_view.submitData(it)
-            }
+        }
+        viewModel.appRecommendationList.observe(viewLifecycleOwner) {
+            app_recommendation_view.submitData(it)
         }
     }
 }

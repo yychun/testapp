@@ -6,8 +6,10 @@
 
     <TextView
         android:id="@+id/title"
+        style="@style/Text.Caption"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_margin="@dimen/dimen_10"
         android:text="@string/app_suggest_title"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
