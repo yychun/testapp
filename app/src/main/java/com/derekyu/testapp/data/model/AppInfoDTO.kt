@@ -34,4 +34,6 @@ data class AppInfoDTO(
         get() = _name.label
     val category: String
         get() = _category.attributes.label
+    val hasRating: Boolean
+        get() = rating != null && ratingCount != null
 }
