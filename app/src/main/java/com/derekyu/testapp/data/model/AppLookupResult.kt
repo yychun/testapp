@@ -9,6 +9,8 @@ data class AppLookupResult(
     val averageUserRating: Float,
     @SerializedName("primaryGenreName")
     val primaryGenreName: String,
+    @SerializedName("trackId")
+    val trackId: String,
     @SerializedName("trackName")
     val trackName: String,
     @SerializedName("userRatingCount")

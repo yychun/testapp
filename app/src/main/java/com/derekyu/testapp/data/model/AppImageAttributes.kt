@@ -2,7 +2,7 @@ package com.derekyu.testapp.data.model
 
 import com.google.gson.annotations.SerializedName
 
-data class AppID(
-    @SerializedName("attributes")
-    val attributes: AppIDAttributes
+data class AppImageAttributes(
+    @SerializedName("height")
+    val height: Float
 )
