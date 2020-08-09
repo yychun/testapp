@@ -2,7 +2,6 @@ package com.derekyu.testapp
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import com.derekyu.testapp.ui.main.MainFragment
 
 class MainActivity : AppCompatActivity() {
 

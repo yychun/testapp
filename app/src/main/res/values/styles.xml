@@ -7,4 +7,20 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <style name="Font" />
+
+    <style name="Font.Title" parent="Font">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@android:color/black</item>
+    </style>
+
+    <style name="Font.Content" parent="Font">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@android:color/darker_gray</item>
+    </style>
+
+    <style name="Font.Tiny" parent="Font">
+        <item name="android:textSize">10sp</item>
+    </style>
+
 </resources>
