@@ -1,14 +1,18 @@
 package com.derekyu.testapp.data.api
 
-import com.derekyu.testapp.data.model.AppInfoList
-import com.derekyu.testapp.data.model.AppLookup
+import com.derekyu.testapp.data.model.AppLookupResponse
+import com.derekyu.testapp.data.model.RetrieveAppsResponse
 import retrofit2.http.GET
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ApiService {
     @GET("/rss/topfreeapplications/limit={limit}/json")
-    suspend fun retrieveAppInfoList(@Path("limit") limit: Int): AppInfoList
+    suspend fun retrieveTopFreeApps(@Path("limit") limit: Int): RetrieveAppsResponse
 
-    @GET("/lookup?id={app_id}")
-    suspend fun retrieveAppLookup(@Path("app_id") appID: String): AppLookup
+    @GET("/rss/topgrossingapplications/limit={limit}/json")
+    suspend fun retrieveTopGrossingApps(@Path("limit") limit: Int): RetrieveAppsResponse
+
+    @GET("/lookup")
+    suspend fun retrieveAppLookup(@Query("id") appID: String): AppLookupResponse
 }
