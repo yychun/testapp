@@ -50,7 +50,7 @@ class AppItemViewHolder(view: View) : RecyclerView.ViewHolder(view) {
 
         fun create(parent: ViewGroup): AppItemViewHolder {
             val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.view_app_lookup, parent, false)
+                .inflate(R.layout.view_app_item, parent, false)
             return AppItemViewHolder(view)
         }
     }
