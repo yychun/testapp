@@ -1,18 +1,21 @@
 package com.derekyu.testapp
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.observe
+import androidx.paging.PagingData
 import androidx.recyclerview.widget.DividerItemDecoration
+import com.derekyu.testapp.data.model.AppInfoDTO
 import com.derekyu.testapp.data.model.MyLoadState
 import com.derekyu.testapp.ui.AppsAdapter
 import com.derekyu.testapp.ui.AppsLoadStateAdapter
+import com.derekyu.testapp.ui.MyStateView
 import kotlinx.android.synthetic.main.main_fragment.*
 import kotlinx.coroutines.launch
 
@@ -37,8 +40,18 @@ class MainFragment : Fragment() {
         initViews()
     }
 
-    @SuppressLint("SetTextI18n")
     private fun initViews() {
+        search_view.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                viewModel.startQuery(newText)
+                return true
+            }
+        })
+
         appsAdapter = AppsAdapter()
         app_list.addItemDecoration(
             DividerItemDecoration(context, DividerItemDecoration.VERTICAL)
@@ -46,40 +59,30 @@ class MainFragment : Fragment() {
         app_list.adapter = appsAdapter.withLoadStateFooter(
             footer = AppsLoadStateAdapter(appsAdapter)
         )
-        app_list_button_retry.setOnClickListener {
-            viewModel.reloadAppList()
-        }
 
         viewModel.appPageLoadState.observe(viewLifecycleOwner) {
-            when (it) {
-                is MyLoadState.Success -> {
-                    lifecycleScope.launch {
-                        app_list_button_retry.visibility = View.GONE
-                        app_list.visibility = View.VISIBLE
-
-                        appsAdapter.submitData(it.list)
-                    }
+            if (it is MyLoadState.Success) {
+                lifecycleScope.launch {
+                    appsAdapter.submitData(it.data)
                 }
-                is MyLoadState.Fail -> {
-                    app_list_button_retry.visibility = View.VISIBLE
-                    app_list_button_retry.text =
-                        "${getString(R.string.retry)} (${it.error.errorMsg(requireContext())})"
-                    app_list.visibility = View.INVISIBLE
-                }
+            }
+            (app_page_state_view as MyStateView<PagingData<AppInfoDTO>>).apply {
+                dataView = app_list
+                // TODO: check isEmptyData
+                setState(it, false)
             }
         }
         viewModel.appRecommendationLoadState.observe(viewLifecycleOwner) {
-            when (it) {
-                is MyLoadState.Success -> {
-                    app_recommendation_view.submitData(it.list)
-                }
-                is MyLoadState.Fail -> {
-                    app_recommendation_view.showRetry(it.error)
-                }
+            app_recommendation_view.setState(it)
+            if (it is MyLoadState.Success) {
+                app_recommendation_view.submitData(it.data)
             }
         }
-        app_recommendation_view.retryCallback = {
+        app_recommendation_view.onRetryCallback = {
             viewModel.fetchAppRecommendationList()
+        }
+        app_page_state_view.onRetryCallback = {
+            viewModel.reloadAppList()
         }
     }
 }

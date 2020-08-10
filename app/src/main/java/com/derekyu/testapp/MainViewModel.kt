@@ -10,10 +10,7 @@ import com.derekyu.testapp.data.model.MyLoadState
 import com.derekyu.testapp.data.model.MyError
 import com.derekyu.testapp.data.pagingsource.local.AppPageMergedPagingSource
 import com.derekyu.testapp.data.repository.*
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.retry
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
@@ -49,6 +46,7 @@ class MainViewModel(
         MutableLiveData()
     val appRecommendationLoadState: LiveData<MyLoadState<List<AppInfoDTO>>>
         get() = _appRecommendationLoadState
+    private val appRecommendations: MutableList<AppInfoDTO> = mutableListOf()
     var isQuerying: Boolean = false
 
     init {
@@ -73,6 +71,8 @@ class MainViewModel(
         viewModelScope.launch {
             try {
                 remoteAppRecommendationRepository.loadRecommendation()?.let {
+                    appRecommendations.clear()
+                    appRecommendations.addAll(it)
                     _appRecommendationLoadState.postValue(MyLoadState.Success(it))
                 }
             } catch (e: IOException) {
@@ -91,14 +91,20 @@ class MainViewModel(
         appPage.retry()
     }
 
-    fun queryAppPage(
+    fun startQuery(
         query: String?
     ) {
         isQuerying = !query.isNullOrBlank()
-        Log.d("Testing", "isQuerying: $isQuerying")
-//        appPagePagingSource.isLoadMoreDisabled = isQuerying
+        queryAppPage(query)
+        queryAppRecommendation(query)
+    }
+
+    private fun queryAppPage(query: String?) {
+        if (_appPageLoadState.value == null || _appPageLoadState.value is MyLoadState.Fail) return
+
+        mergedPageSource?.isLoadMoreDisabled = isQuerying
         if (isQuerying) {
-            GlobalScope.launch {
+            viewModelScope.launch {
                 appPage.collectLatest {
                     _appPageLoadState.postValue(
                         MyLoadState.Success(
@@ -109,13 +115,27 @@ class MainViewModel(
                 }
             }
         } else {
-            GlobalScope.launch {
+            viewModelScope.launch {
                 appPage.collectLatest {
                     _appPageLoadState.postValue(
                         MyLoadState.Success(it)
                     )
                 }
             }
+        }
+    }
+
+    private fun queryAppRecommendation(query: String?) {
+        if (appRecommendations.isEmpty()) return
+
+        if (isQuerying) {
+            appRecommendations.filter {
+                it.matchQuery(query!!)
+            }.let {
+                _appRecommendationLoadState.postValue(MyLoadState.Success(it))
+            }
+        } else {
+            _appRecommendationLoadState.postValue(MyLoadState.Success(appRecommendations))
         }
     }
 }

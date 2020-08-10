@@ -29,4 +29,12 @@
         <item name="android:textColor">@android:color/darker_gray</item>
     </style>
 
+    <style name="Button" />
+
+    <style name="Button.Primary" parent="Button">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/colorAccent</item>
+        <item name="android:background">@drawable/drawable_button</item>
+    </style>
+
 </resources>
