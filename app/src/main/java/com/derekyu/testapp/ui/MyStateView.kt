@@ -20,7 +20,7 @@ class MyStateView<T> @JvmOverloads constructor(
 
         state_button.setOnClickListener {
             when (state) {
-                is MyLoadState.Fail -> onRetryCallback?.invoke()
+                is MyLoadState.Error -> onRetryCallback?.invoke()
             }
         }
     }
@@ -47,7 +47,7 @@ class MyStateView<T> @JvmOverloads constructor(
                     dataView?.visibility = View.VISIBLE
                 }
             }
-            is MyLoadState.Fail -> {
+            is MyLoadState.Error -> {
                 state_button.text =
                     "${context.getString(R.string.retry)} (${state.error.errorMsg(context)})"
 

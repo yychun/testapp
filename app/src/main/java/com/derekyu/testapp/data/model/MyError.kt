@@ -12,4 +12,8 @@ sealed class MyError(
         override fun errorMsg(context: Context): String =
             context.getString(R.string.error_msg_network)
     }
+
+    class Unknown(throwable: Throwable) : MyError(throwable) {
+        override fun errorMsg(context: Context): String = throwable.localizedMessage ?: ""
+    }
 }

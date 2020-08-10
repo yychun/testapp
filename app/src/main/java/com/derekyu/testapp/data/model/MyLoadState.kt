@@ -5,7 +5,7 @@ sealed class MyLoadState<T> {
         val data: T
     ) : MyLoadState<T>()
 
-    data class Fail<T>(
+    data class Error<T>(
         val error: MyError
     ) : MyLoadState<T>()
 

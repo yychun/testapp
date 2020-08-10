@@ -7,8 +7,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.observe
+import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -18,7 +20,9 @@ import com.derekyu.testapp.data.model.MyLoadState
 import com.derekyu.testapp.ui.AppsAdapter
 import com.derekyu.testapp.ui.AppsLoadStateAdapter
 import com.derekyu.testapp.ui.MyStateView
+import com.derekyu.testapp.utils.mapToMyError
 import kotlinx.android.synthetic.main.main_fragment.*
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class MainFragment : Fragment() {
@@ -71,6 +75,8 @@ class MainFragment : Fragment() {
                 }
             }
         })
+        app_page_state_view.dataView = app_list
+
         viewModel.isQuerying.observe(viewLifecycleOwner) {
             val hasFooter = app_list.adapter is ConcatAdapter
             if (!it) {
@@ -83,9 +89,9 @@ class MainFragment : Fragment() {
             } else {
                 if (hasFooter) {
                     /*
-                     when AppPageMergedPagingSource.load() is called and querying is performed, a LoadResult.Error is returned,
-                     in order not to fetch from remote.
-                     since an error msg would be shown in footer section, the footer is temp removed
+                     when AppPageMergedPagingSource.load() is called and querying is performed,
+                     a LoadResult.Error is returned to avoid fetching from remote when performing query.
+                     An error msg would be shown in footer section which is unintended. Thus the footer is temp removed.
                      */
                     app_list.adapter = appsAdapter
                 }
@@ -93,16 +99,8 @@ class MainFragment : Fragment() {
         }
 
         viewModel.appPageLoadState.observe(viewLifecycleOwner) {
-            if (it is MyLoadState.Success) {
-                lifecycleScope.launch {
-                    appsAdapter.submitData(it.data)
-                }
-            }
-            (app_page_state_view as MyStateView<PagingData<AppInfoDTO>>).apply {
-                dataView = app_list
-                // TODO: check isEmptyData
-                setState(it, false)
-            }
+            // TODO: check isEmptyData
+            setAppPageState(it, false)
         }
         viewModel.appRecommendationLoadState.observe(viewLifecycleOwner) {
             app_recommendation_view.setState(it)
@@ -117,5 +115,32 @@ class MainFragment : Fragment() {
             viewModel.onRetryAppPage()
             appsAdapter.retry()
         }
+
+        appsAdapter.loadStateFlow.asLiveData().observe(viewLifecycleOwner) {
+            when (val refreshLoadState = it.source.refresh) {
+                is LoadState.Error -> setAppPageState(
+                    MyLoadState.Error(
+                        refreshLoadState.error.mapToMyError()
+                    ), true
+                )
+                is LoadState.Loading -> setAppPageState(MyLoadState.Loading(), false)
+                is LoadState.NotLoading -> {
+                    lifecycleScope.launch {
+                        viewModel.appPage.collectLatest {
+                            setAppPageState(MyLoadState.Success(it), false)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun setAppPageState(state: MyLoadState<PagingData<AppInfoDTO>>, isEmptyData: Boolean) {
+        if (state is MyLoadState.Success) {
+            lifecycleScope.launch {
+                appsAdapter.submitData(state.data)
+            }
+        }
+        (app_page_state_view as MyStateView<PagingData<AppInfoDTO>>).setState(state, isEmptyData)
     }
 }

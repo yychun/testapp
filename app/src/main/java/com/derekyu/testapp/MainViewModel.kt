@@ -20,7 +20,7 @@ class MainViewModel(
     private val remoteAppRecommendationRepository: IAppRecommendationRepository
 ) : ViewModel() {
     private var mergedPageSource: AppPageMergedPagingSource? = null
-    private val appPage = Pager(
+    val appPage = Pager(
         PagingConfig(
             pageSize = Constants.Paging.PAGE_LOAD_SIZE,
             prefetchDistance = 1,
@@ -55,14 +55,6 @@ class MainViewModel(
         get() = !_isQuerying.value!! && onLoadTriggeredWhenQuerying
 
     init {
-        _appPageLoadState.postValue(MyLoadState.Loading())
-
-        viewModelScope.launch {
-            appPage.collectLatest {
-                _appPageLoadState.postValue(MyLoadState.Success(it))
-            }
-        }
-
         fetchAppRecommendationList()
     }
 
@@ -77,7 +69,7 @@ class MainViewModel(
                 }
             } catch (e: IOException) {
                 _appRecommendationLoadState.postValue(
-                    MyLoadState.Fail(
+                    MyLoadState.Error(
                         MyError.Network(
                             e
                         )
@@ -102,7 +94,7 @@ class MainViewModel(
     }
 
     private fun queryAppPage(query: String?, isQuerying: Boolean) {
-        if (_appPageLoadState.value == null || _appPageLoadState.value is MyLoadState.Fail) return
+        if (_appPageLoadState.value == null || _appPageLoadState.value is MyLoadState.Error) return
 
         mergedPageSource?.isLoadMoreDisabled = isQuerying
         viewModelScope.launch {
