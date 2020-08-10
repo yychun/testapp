@@ -1,7 +1,7 @@
 package com.derekyu.testapp
 
+import android.annotation.SuppressLint
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -10,11 +10,11 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.observe
 import androidx.recyclerview.widget.DividerItemDecoration
+import com.derekyu.testapp.data.model.MyLoadState
 import com.derekyu.testapp.ui.AppsAdapter
 import com.derekyu.testapp.ui.AppsLoadStateAdapter
 import kotlinx.android.synthetic.main.main_fragment.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 class MainFragment : Fragment() {
 
@@ -34,10 +34,11 @@ class MainFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        initAdapter()
+        initViews()
     }
 
-    private fun initAdapter() {
+    @SuppressLint("SetTextI18n")
+    private fun initViews() {
         appsAdapter = AppsAdapter()
         app_list.addItemDecoration(
             DividerItemDecoration(context, DividerItemDecoration.VERTICAL)
@@ -45,15 +46,39 @@ class MainFragment : Fragment() {
         app_list.adapter = appsAdapter.withLoadStateFooter(
             footer = AppsLoadStateAdapter(appsAdapter)
         )
+        app_list_button_retry.setOnClickListener {
+            viewModel.reloadAppList()
+        }
 
-        lifecycleScope.launchWhenCreated {
-            @OptIn(ExperimentalCoroutinesApi::class)
-            viewModel.appPage.collectLatest {
-                appsAdapter.submitData(it)
+        viewModel.appPageLoadState.observe(viewLifecycleOwner) {
+            when (it) {
+                is MyLoadState.Success -> {
+                    lifecycleScope.launch {
+                        app_list_button_retry.visibility = View.GONE
+                        app_list.visibility = View.VISIBLE
+
+                        appsAdapter.submitData(it.list)
+                    }
+                }
+                is MyLoadState.Fail -> {
+                    app_list_button_retry.visibility = View.VISIBLE
+                    app_list_button_retry.text = "${getString(R.string.retry)} (${it.error.errorMsg(requireContext())})"
+                    app_list.visibility = View.INVISIBLE
+                }
             }
         }
-        viewModel.appRecommendationList.observe(viewLifecycleOwner) {
-            app_recommendation_view.submitData(it)
+        viewModel.appRecommendationLoadState.observe(viewLifecycleOwner) {
+            when (it) {
+                is MyLoadState.Success -> {
+                    app_recommendation_view.submitData(it.list)
+                }
+                is MyLoadState.Fail -> {
+                    app_recommendation_view.showRetry(it.error)
+                }
+            }
+        }
+        app_recommendation_view.retryCallback = {
+            viewModel.fetchAppRecommendationList()
         }
     }
 }
