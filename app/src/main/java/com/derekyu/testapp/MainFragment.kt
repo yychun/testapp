@@ -62,7 +62,8 @@ class MainFragment : Fragment() {
                 }
                 is MyLoadState.Fail -> {
                     app_list_button_retry.visibility = View.VISIBLE
-                    app_list_button_retry.text = "${getString(R.string.retry)} (${it.error.errorMsg(requireContext())})"
+                    app_list_button_retry.text =
+                        "${getString(R.string.retry)} (${it.error.errorMsg(requireContext())})"
                     app_list.visibility = View.INVISIBLE
                 }
             }

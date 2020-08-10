@@ -1,4 +1,4 @@
-package com.derekyu.testapp.data.api
+package com.derekyu.testapp.data.remote
 
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -14,5 +14,5 @@ object RetrofitBuilder {
             .build()
     }
 
-    val apiService: ApiService = getRetrofit().create(ApiService::class.java)
+    val APP_REMOTE_SERVICE: AppRemoteService = getRetrofit().create(AppRemoteService::class.java)
 }

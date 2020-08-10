@@ -39,7 +39,7 @@ class AppRecommendationView @JvmOverloads constructor(
 
     @SuppressLint("SetTextI18n")
     fun showRetry(error: MyError) {
-        app_recommendation_button_retry.text = "${context.getString(R.string.retry)} - ${error.errorMsg(context)}"
+        app_recommendation_button_retry.text = "${context.getString(R.string.retry)} (${error.errorMsg(context)})"
         app_recommendation_button_retry.visibility = View.VISIBLE
         app_recommendation_recycler_view.visibility = View.INVISIBLE
     }

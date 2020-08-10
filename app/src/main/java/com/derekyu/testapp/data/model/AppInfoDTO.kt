@@ -36,4 +36,10 @@ data class AppInfoDTO(
 
     val hasRating: Boolean
         get() = rating != null && ratingCount != null
+
+    fun matchQuery(query: String) =
+        appArtist.contains(query, true) or
+                category.contains(query, true) or
+                name.contains(query, true) or
+                summary.contains(query, true)
 }

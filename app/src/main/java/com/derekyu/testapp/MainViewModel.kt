@@ -1,17 +1,16 @@
 package com.derekyu.testapp
 
 import androidx.lifecycle.*
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
-import com.derekyu.testapp.data.IAppDataSource
-import com.derekyu.testapp.data.api.ApiHelper
-import com.derekyu.testapp.data.api.AppRemoteDataSource
-import com.derekyu.testapp.data.api.RetrofitBuilder
+import androidx.paging.*
+import com.derekyu.testapp.data.AppPageLocalRepository
+import com.derekyu.testapp.data.remote.AppRemoteDataSource
+import com.derekyu.testapp.data.remote.RetrofitBuilder
 import com.derekyu.testapp.data.model.AppInfoDTO
 import com.derekyu.testapp.data.model.MyLoadState
 import com.derekyu.testapp.data.model.MyError
-import com.derekyu.testapp.data.repository.inmemory.PageKeyedPagingSource
+import com.derekyu.testapp.data.pagingsource.local.AppPageMergedPagingSource
+import com.derekyu.testapp.data.repository.*
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.retry
@@ -20,19 +19,26 @@ import retrofit2.HttpException
 import java.io.IOException
 
 class MainViewModel(
-    private val appDataSource: IAppDataSource
+    localAppPageRepository: IAppLocalPageRepository,
+    remoteAppPageRepository: IAppPageRepository,
+    private val remoteAppRecommendationRepository: IAppRecommendationRepository
 ) : ViewModel() {
-
-    private val appPagingSource = PageKeyedPagingSource(appDataSource)
-    private val _appPage = Pager(
+    private var mergedPageSource: AppPageMergedPagingSource? = null
+    private val appPage = Pager(
         PagingConfig(
-            pageSize = PageKeyedPagingSource.PAGE_SIZE,
+            pageSize = Constants.Paging.PAGE_LOAD_SIZE,
             prefetchDistance = 1,
             enablePlaceholders = true,
             initialLoadSize = 1
         )
     ) {
-        appPagingSource
+        AppPageMergedPagingSource(
+            localAppPageRepository,
+            remoteAppPageRepository,
+            isQuerying
+        ).apply {
+            mergedPageSource = this
+        }
     }.flow
     private val _appPageLoadState: MutableLiveData<MyLoadState<PagingData<AppInfoDTO>>> =
         MutableLiveData()
@@ -43,9 +49,10 @@ class MainViewModel(
         MutableLiveData()
     val appRecommendationLoadState: LiveData<MyLoadState<List<AppInfoDTO>>>
         get() = _appRecommendationLoadState
+    var isQuerying: Boolean = false
 
     init {
-        _appPage.catch {
+        appPage.catch {
             when (it) {
                 is IOException, is HttpException -> {
                     _appPageLoadState.postValue(MyLoadState.Fail(MyError.Network(it)))
@@ -54,7 +61,7 @@ class MainViewModel(
         }
 
         viewModelScope.launch {
-            _appPage.collectLatest {
+            appPage.collectLatest {
                 _appPageLoadState.postValue(MyLoadState.Success(it))
             }
         }
@@ -65,11 +72,7 @@ class MainViewModel(
     fun fetchAppRecommendationList() {
         viewModelScope.launch {
             try {
-                appDataSource.retrieveTopGrossingApps(TOP_GROSSING_APP_SIZE).feed.entry.map {
-                    AppInfoDTO(
-                        it
-                    )
-                }.let {
+                remoteAppRecommendationRepository.loadRecommendation()?.let {
                     _appRecommendationLoadState.postValue(MyLoadState.Success(it))
                 }
             } catch (e: IOException) {
@@ -85,11 +88,35 @@ class MainViewModel(
     }
 
     fun reloadAppList() {
-        _appPage.retry()
+        appPage.retry()
     }
 
-    companion object {
-        const val TOP_GROSSING_APP_SIZE = 10
+    fun queryAppPage(
+        query: String?
+    ) {
+        isQuerying = !query.isNullOrBlank()
+        Log.d("Testing", "isQuerying: $isQuerying")
+//        appPagePagingSource.isLoadMoreDisabled = isQuerying
+        if (isQuerying) {
+            GlobalScope.launch {
+                appPage.collectLatest {
+                    _appPageLoadState.postValue(
+                        MyLoadState.Success(
+                            it.filter { dto ->
+                                dto.matchQuery(query!!)
+                            })
+                    )
+                }
+            }
+        } else {
+            GlobalScope.launch {
+                appPage.collectLatest {
+                    _appPageLoadState.postValue(
+                        MyLoadState.Success(it)
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -97,8 +124,14 @@ class MainViewModel(
  * Factory for [MainViewModel].
  */
 object LiveDataVMFactory : ViewModelProvider.Factory {
+    private val iAppRemoteDataSource by lazy { AppRemoteDataSource(RetrofitBuilder.APP_REMOTE_SERVICE) }
+
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
-        return MainViewModel(AppRemoteDataSource(RetrofitBuilder.apiService)) as T
+        return MainViewModel(
+            AppPageLocalRepository(),
+            AppPageRemoteRepository(iAppRemoteDataSource),
+            AppRecommendationRemoteRepository(iAppRemoteDataSource)
+        ) as T
     }
 }
