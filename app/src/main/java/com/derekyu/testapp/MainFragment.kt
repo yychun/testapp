@@ -10,7 +10,9 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.observe
 import androidx.paging.PagingData
+import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.RecyclerView
 import com.derekyu.testapp.data.model.AppInfoDTO
 import com.derekyu.testapp.data.model.MyLoadState
 import com.derekyu.testapp.ui.AppsAdapter
@@ -58,6 +60,37 @@ class MainFragment : Fragment() {
         app_list.adapter = appsAdapter.withLoadStateFooter(
             footer = AppsLoadStateAdapter(appsAdapter)
         )
+        app_list.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                if (!recyclerView.canScrollVertically(View.SCROLL_AXIS_VERTICAL)) {
+                    if (viewModel.shouldRetryLoadingAppPage) {
+                        viewModel.onRetryAppPage()
+                        appsAdapter.retry()
+                    }
+                }
+            }
+        })
+        viewModel.isQuerying.observe(viewLifecycleOwner) {
+            val hasFooter = app_list.adapter is ConcatAdapter
+            if (!it) {
+                if (!hasFooter) {
+                    // restore footer which is removed before
+                    app_list.adapter = appsAdapter.withLoadStateFooter(
+                        footer = AppsLoadStateAdapter(appsAdapter)
+                    )
+                }
+            } else {
+                if (hasFooter) {
+                    /*
+                     when AppPageMergedPagingSource.load() is called and querying is performed, a LoadResult.Error is returned,
+                     in order not to fetch from remote.
+                     since an error msg would be shown in footer section, the footer is temp removed
+                     */
+                    app_list.adapter = appsAdapter
+                }
+            }
+        }
 
         viewModel.appPageLoadState.observe(viewLifecycleOwner) {
             if (it is MyLoadState.Success) {
@@ -81,7 +114,8 @@ class MainFragment : Fragment() {
             viewModel.fetchAppRecommendationList()
         }
         app_page_state_view.onRetryCallback = {
-            viewModel.reloadAppList()
+            viewModel.onRetryAppPage()
+            appsAdapter.retry()
         }
     }
 }

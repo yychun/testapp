@@ -8,14 +8,14 @@ import com.derekyu.testapp.data.remote.RetrofitBuilder
 import com.derekyu.testapp.data.model.AppInfoDTO
 import com.derekyu.testapp.data.model.MyLoadState
 import com.derekyu.testapp.data.model.MyError
-import com.derekyu.testapp.data.pagingsource.local.AppPageMergedPagingSource
+import com.derekyu.testapp.data.pagingsource.AppPageMergedPagingSource
 import com.derekyu.testapp.data.repository.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.io.IOException
 
 class MainViewModel(
-    localAppPageRepository: IAppLocalPageRepository,
+    localAppPageLocalRepository: IAppPageLocalRepository,
     remoteAppPageRepository: IAppPageRepository,
     private val remoteAppRecommendationRepository: IAppRecommendationRepository
 ) : ViewModel() {
@@ -29,10 +29,12 @@ class MainViewModel(
         )
     ) {
         AppPageMergedPagingSource(
-            localAppPageRepository,
+            localAppPageLocalRepository,
             remoteAppPageRepository,
-            isQuerying
-        ).apply {
+            _isQuerying.value!!
+        ) { key ->
+            onLoadTriggeredWhenQuerying = true
+        }.apply {
             mergedPageSource = this
         }
     }.flow.cachedIn(viewModelScope)
@@ -45,7 +47,12 @@ class MainViewModel(
     val appRecommendationLoadState: LiveData<MyLoadState<List<AppInfoDTO>>>
         get() = _appRecommendationLoadState
     private val appRecommendations: MutableList<AppInfoDTO> = mutableListOf()
-    var isQuerying: Boolean = false
+    private val _isQuerying: MutableLiveData<Boolean> = MutableLiveData(false)
+    val isQuerying: LiveData<Boolean>
+        get() = _isQuerying
+    var onLoadTriggeredWhenQuerying: Boolean = false
+    val shouldRetryLoadingAppPage: Boolean
+        get() = !_isQuerying.value!! && onLoadTriggeredWhenQuerying
 
     init {
         _appPageLoadState.postValue(MyLoadState.Loading())
@@ -80,20 +87,21 @@ class MainViewModel(
         }
     }
 
-    fun reloadAppList() {
-        appPage.retry()
+    fun onRetryAppPage() {
+        onLoadTriggeredWhenQuerying = false
     }
 
     fun startQuery(
         query: String?
     ) {
         val trimmed = query?.trim()
-        isQuerying = !trimmed.isNullOrBlank()
-        queryAppPage(trimmed)
-        queryAppRecommendation(trimmed)
+        val isQuerying = !trimmed.isNullOrBlank()
+        _isQuerying.postValue(isQuerying)
+        queryAppPage(trimmed, isQuerying)
+        queryAppRecommendation(trimmed, isQuerying)
     }
 
-    private fun queryAppPage(query: String?) {
+    private fun queryAppPage(query: String?, isQuerying: Boolean) {
         if (_appPageLoadState.value == null || _appPageLoadState.value is MyLoadState.Fail) return
 
         mergedPageSource?.isLoadMoreDisabled = isQuerying
@@ -119,7 +127,7 @@ class MainViewModel(
         }
     }
 
-    private fun queryAppRecommendation(query: String?) {
+    private fun queryAppRecommendation(query: String?, isQuerying: Boolean) {
         if (appRecommendations.isEmpty()) return
 
         if (isQuerying) {

@@ -19,7 +19,9 @@ class MyStateView<T> @JvmOverloads constructor(
         LayoutInflater.from(context).inflate(R.layout.view_my_state, this)
 
         state_button.setOnClickListener {
-            onRetryCallback?.invoke()
+            when (state) {
+                is MyLoadState.Fail -> onRetryCallback?.invoke()
+            }
         }
     }
 
