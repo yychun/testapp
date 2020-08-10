@@ -5,6 +5,8 @@ import com.derekyu.testapp.Constants
 import com.derekyu.testapp.data.model.AppInfoDTO
 import com.derekyu.testapp.data.repository.IAppLocalPageRepository
 import com.derekyu.testapp.data.repository.IAppPageRepository
+import retrofit2.HttpException
+import java.io.IOException
 
 class AppPageMergedPagingSource(
     private val iAppLocalPageRepository: IAppLocalPageRepository,
@@ -16,8 +18,14 @@ class AppPageMergedPagingSource(
         val key = params.key ?: Constants.Paging.INITIAL_PAGE
         var data = iAppLocalPageRepository.loadNextPage(key)
         if (data == null && !isLoadMoreDisabled) {
-            data = iAppRemotePageRepository.loadNextPage(key)?.apply {
-                iAppLocalPageRepository.insertData(key, this)
+            try {
+                data = iAppRemotePageRepository.loadNextPage(key)?.apply {
+                    iAppLocalPageRepository.insertData(key, this)
+                }
+            } catch (e: IOException) {
+                return LoadResult.Error<Int, AppInfoDTO>(e)
+            } catch (e: HttpException) {
+                return LoadResult.Error<Int, AppInfoDTO>(e)
             }
         }
         return data.let {

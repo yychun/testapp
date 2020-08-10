@@ -25,7 +25,9 @@ class AppRecommendationView @JvmOverloads constructor(
         adapter = AppRecommendationAdapter()
         app_recommendation_recycler_view.adapter = adapter
 
-        app_recommendation_state_view.onRetryCallback = onRetryCallback
+        app_recommendation_state_view.onRetryCallback = {
+            onRetryCallback?.invoke()
+        }
     }
 
     fun submitData(list: List<AppInfoDTO>) {
@@ -37,7 +39,7 @@ class AppRecommendationView @JvmOverloads constructor(
         this.state = state
         val isEmptyData = when (state) {
             is MyLoadState.Success -> state.data.isEmpty()
-            is MyLoadState.Fail -> true
+            else -> true
         }
         (app_recommendation_state_view as MyStateView<List<AppInfoDTO>>).apply {
             dataView = app_recommendation_recycler_view

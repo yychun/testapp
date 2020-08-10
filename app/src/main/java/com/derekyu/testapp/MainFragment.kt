@@ -26,7 +26,7 @@ class MainFragment : Fragment() {
     }
 
     private val viewModel: MainViewModel by viewModels { LiveDataVMFactory }
-    private lateinit var appsAdapter: AppsAdapter
+    private val appsAdapter: AppsAdapter by lazy { AppsAdapter() }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -52,7 +52,6 @@ class MainFragment : Fragment() {
             }
         })
 
-        appsAdapter = AppsAdapter()
         app_list.addItemDecoration(
             DividerItemDecoration(context, DividerItemDecoration.VERTICAL)
         )

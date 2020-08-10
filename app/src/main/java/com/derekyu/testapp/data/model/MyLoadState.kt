@@ -8,4 +8,6 @@ sealed class MyLoadState<T> {
     data class Fail<T>(
         val error: MyError
     ) : MyLoadState<T>()
+
+    class Loading<T>: MyLoadState<T>()
 }

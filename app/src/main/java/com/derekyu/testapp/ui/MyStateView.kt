@@ -35,16 +35,29 @@ class MyStateView<T> @JvmOverloads constructor(
                 if (isEmptyData) {
                     state_button.text = context.getString(R.string.app_page_empty)
                     this.visibility = View.VISIBLE
+                    state_button.visibility = View.VISIBLE
+                    progress_bar.visibility = View.GONE
                     dataView?.visibility = View.INVISIBLE
                 } else {
                     this.visibility = View.GONE
+                    state_button.visibility = View.GONE
+                    progress_bar.visibility = View.GONE
                     dataView?.visibility = View.VISIBLE
                 }
             }
             is MyLoadState.Fail -> {
                 state_button.text =
                     "${context.getString(R.string.retry)} (${state.error.errorMsg(context)})"
+
                 this.visibility = View.VISIBLE
+                state_button.visibility = View.VISIBLE
+                progress_bar.visibility = View.GONE
+                dataView?.visibility = View.INVISIBLE
+            }
+            is MyLoadState.Loading -> {
+                this.visibility = View.VISIBLE
+                state_button.visibility = View.GONE
+                progress_bar.visibility = View.VISIBLE
                 dataView?.visibility = View.INVISIBLE
             }
         }

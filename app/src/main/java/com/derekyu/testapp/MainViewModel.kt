@@ -12,7 +12,6 @@ import com.derekyu.testapp.data.pagingsource.local.AppPageMergedPagingSource
 import com.derekyu.testapp.data.repository.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
 import java.io.IOException
 
 class MainViewModel(
@@ -36,12 +35,11 @@ class MainViewModel(
         ).apply {
             mergedPageSource = this
         }
-    }.flow
+    }.flow.cachedIn(viewModelScope)
     private val _appPageLoadState: MutableLiveData<MyLoadState<PagingData<AppInfoDTO>>> =
         MutableLiveData()
     val appPageLoadState: LiveData<MyLoadState<PagingData<AppInfoDTO>>>
         get() = _appPageLoadState
-
     private val _appRecommendationLoadState: MutableLiveData<MyLoadState<List<AppInfoDTO>>> =
         MutableLiveData()
     val appRecommendationLoadState: LiveData<MyLoadState<List<AppInfoDTO>>>
@@ -50,13 +48,7 @@ class MainViewModel(
     var isQuerying: Boolean = false
 
     init {
-        appPage.catch {
-            when (it) {
-                is IOException, is HttpException -> {
-                    _appPageLoadState.postValue(MyLoadState.Fail(MyError.Network(it)))
-                }
-            }
-        }
+        _appPageLoadState.postValue(MyLoadState.Loading())
 
         viewModelScope.launch {
             appPage.collectLatest {
@@ -68,6 +60,7 @@ class MainViewModel(
     }
 
     fun fetchAppRecommendationList() {
+        _appRecommendationLoadState.postValue(MyLoadState.Loading())
         viewModelScope.launch {
             try {
                 remoteAppRecommendationRepository.loadRecommendation()?.let {
@@ -94,9 +87,10 @@ class MainViewModel(
     fun startQuery(
         query: String?
     ) {
-        isQuerying = !query.isNullOrBlank()
-        queryAppPage(query)
-        queryAppRecommendation(query)
+        val trimmed = query?.trim()
+        isQuerying = !trimmed.isNullOrBlank()
+        queryAppPage(trimmed)
+        queryAppRecommendation(trimmed)
     }
 
     private fun queryAppPage(query: String?) {
