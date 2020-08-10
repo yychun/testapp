@@ -1,5 +1,5 @@
 package com.derekyu.testapp.data.model
 
-data class AppLookupResponse(
+data class RetrieveAppLookupResponse(
     val results: List<AppLookupResult>
 )

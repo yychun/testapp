@@ -4,7 +4,9 @@ import androidx.lifecycle.*
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import com.derekyu.testapp.data.IAppDataSource
 import com.derekyu.testapp.data.api.ApiHelper
+import com.derekyu.testapp.data.api.AppRemoteDataSource
 import com.derekyu.testapp.data.api.RetrofitBuilder
 import com.derekyu.testapp.data.model.AppInfoDTO
 import com.derekyu.testapp.data.model.MyLoadState
@@ -18,9 +20,10 @@ import retrofit2.HttpException
 import java.io.IOException
 
 class MainViewModel(
-    private val apiHelper: ApiHelper
+    private val appDataSource: IAppDataSource
 ) : ViewModel() {
 
+    private val appPagingSource = PageKeyedPagingSource(appDataSource)
     private val _appPage = Pager(
         PagingConfig(
             pageSize = PageKeyedPagingSource.PAGE_SIZE,
@@ -29,7 +32,7 @@ class MainViewModel(
             initialLoadSize = 1
         )
     ) {
-        PageKeyedPagingSource(apiHelper)
+        appPagingSource
     }.flow
     private val _appPageLoadState: MutableLiveData<MyLoadState<PagingData<AppInfoDTO>>> =
         MutableLiveData()
@@ -62,7 +65,7 @@ class MainViewModel(
     fun fetchAppRecommendationList() {
         viewModelScope.launch {
             try {
-                apiHelper.retrieveTopGrossingApps(TOP_GROSSING_APP_SIZE).feed.entry.map {
+                appDataSource.retrieveTopGrossingApps(TOP_GROSSING_APP_SIZE).feed.entry.map {
                     AppInfoDTO(
                         it
                     )
@@ -94,10 +97,8 @@ class MainViewModel(
  * Factory for [MainViewModel].
  */
 object LiveDataVMFactory : ViewModelProvider.Factory {
-    private val apiHelper = ApiHelper(RetrofitBuilder.apiService)
-
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
-        return MainViewModel(apiHelper) as T
+        return MainViewModel(AppRemoteDataSource(RetrofitBuilder.apiService)) as T
     }
 }

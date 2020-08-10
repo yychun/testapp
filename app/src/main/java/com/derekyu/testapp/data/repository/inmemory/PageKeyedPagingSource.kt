@@ -2,7 +2,7 @@ package com.derekyu.testapp.data.repository.inmemory
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingSource.LoadResult.Page
-import com.derekyu.testapp.data.api.ApiHelper
+import com.derekyu.testapp.data.IAppDataSource
 import com.derekyu.testapp.data.model.AppInfo
 import com.derekyu.testapp.data.model.AppInfoDTO
 import com.derekyu.testapp.data.model.AppInfoFeed
@@ -10,7 +10,7 @@ import retrofit2.HttpException
 import java.io.IOException
 
 class PageKeyedPagingSource(
-    private val apiHelper: ApiHelper
+    private val appDataSource: IAppDataSource
 ) : PagingSource<Int, AppInfoDTO>() {
     private var appInfoFeed: AppInfoFeed? = null
 
@@ -42,13 +42,13 @@ class PageKeyedPagingSource(
     }
 
     private suspend fun retrieveAppInfoList() {
-        appInfoFeed = apiHelper.retrieveTopFreeApps(TOTAL_SIZE).feed
+        appInfoFeed = appDataSource.retrieveTopFreeApps(TOTAL_SIZE).feed
     }
 
     private fun sublist(start: Int): List<AppInfo>? =
         appInfoFeed?.entry?.takeIf { it.size > start }?.subList(start, start + PAGE_SIZE)
 
-    private suspend fun retrieveAppLookup(appID: String) = apiHelper.retrieveAppLookup(appID)
+    private suspend fun retrieveAppLookup(appID: String) = appDataSource.retrieveAppLookup(appID)
 
     companion object {
         const val INITIAL_PAGE = 0

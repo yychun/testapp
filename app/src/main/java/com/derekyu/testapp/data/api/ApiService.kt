@@ -1,6 +1,6 @@
 package com.derekyu.testapp.data.api
 
-import com.derekyu.testapp.data.model.AppLookupResponse
+import com.derekyu.testapp.data.model.RetrieveAppLookupResponse
 import com.derekyu.testapp.data.model.RetrieveAppsResponse
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -14,5 +14,5 @@ interface ApiService {
     suspend fun retrieveTopGrossingApps(@Path("limit") limit: Int): RetrieveAppsResponse
 
     @GET("/lookup")
-    suspend fun retrieveAppLookup(@Query("id") appID: String): AppLookupResponse
+    suspend fun retrieveAppLookup(@Query("id") appID: String): RetrieveAppLookupResponse
 }
