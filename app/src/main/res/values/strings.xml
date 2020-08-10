@@ -3,7 +3,7 @@
     <string name="app_search_view_hint">搜尋</string>
     <string name="app_recommendation_title">推介</string>
     <string name="retry">重試</string>
-    <string name="app_page_empty">沒有匹配</string>
+    <string name="app_page_empty">沒有資料</string>
 
     <string name="error_msg_network">網絡問題</string>
 </resources>

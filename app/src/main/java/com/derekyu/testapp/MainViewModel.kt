@@ -105,24 +105,18 @@ class MainViewModel(
         if (_appPageLoadState.value == null || _appPageLoadState.value is MyLoadState.Fail) return
 
         mergedPageSource?.isLoadMoreDisabled = isQuerying
-        if (isQuerying) {
-            viewModelScope.launch {
-                appPage.collectLatest {
-                    _appPageLoadState.postValue(
+        viewModelScope.launch {
+            appPage.collectLatest {
+                _appPageLoadState.postValue(
+                    if (isQuerying) {
                         MyLoadState.Success(
                             it.filter { dto ->
                                 dto.matchQuery(query!!)
                             })
-                    )
-                }
-            }
-        } else {
-            viewModelScope.launch {
-                appPage.collectLatest {
-                    _appPageLoadState.postValue(
+                    } else {
                         MyLoadState.Success(it)
-                    )
-                }
+                    }
+                )
             }
         }
     }
