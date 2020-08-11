@@ -55,6 +55,12 @@ class MainViewModel(
         get() = !_isQuerying.value!! && onLoadTriggeredWhenQuerying
 
     init {
+        viewModelScope.launch {
+            appPage.collectLatest {
+                _appPageLoadState.postValue(MyLoadState.Success(it))
+            }
+        }
+
         fetchAppRecommendationList()
     }
 

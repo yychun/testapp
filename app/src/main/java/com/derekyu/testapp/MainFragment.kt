@@ -119,9 +119,8 @@ class MainFragment : Fragment() {
         appsAdapter.loadStateFlow.asLiveData().observe(viewLifecycleOwner) {
             when (val refreshLoadState = it.source.refresh) {
                 is LoadState.Error -> setAppPageState(
-                    MyLoadState.Error(
-                        refreshLoadState.error.mapToMyError()
-                    ), true
+                    MyLoadState.Error(refreshLoadState.error.mapToMyError()),
+                    true
                 )
                 is LoadState.Loading -> setAppPageState(MyLoadState.Loading(), false)
                 is LoadState.NotLoading -> {
