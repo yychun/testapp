@@ -77,6 +77,14 @@ class MainFragment : Fragment() {
         })
         app_page_state_view.dataView = app_list
 
+        app_recommendation_view.onRetryCallback = {
+            viewModel.fetchAppRecommendationList()
+        }
+        app_page_state_view.onRetryCallback = {
+            viewModel.onRetryAppPage()
+            appsAdapter.retry()
+        }
+
         viewModel.isQuerying.observe(viewLifecycleOwner) {
             val hasFooter = app_list.adapter is ConcatAdapter
             if (!it) {
@@ -107,13 +115,6 @@ class MainFragment : Fragment() {
             if (it is MyLoadState.Success) {
                 app_recommendation_view.submitData(it.data)
             }
-        }
-        app_recommendation_view.onRetryCallback = {
-            viewModel.fetchAppRecommendationList()
-        }
-        app_page_state_view.onRetryCallback = {
-            viewModel.onRetryAppPage()
-            appsAdapter.retry()
         }
 
         appsAdapter.loadStateFlow.asLiveData().observe(viewLifecycleOwner) {
